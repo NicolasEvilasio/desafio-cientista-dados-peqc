@@ -8,3 +8,8 @@ dependencies = [
     "dbt-bigquery>=1.12.2",
     "dbt-core>=1.12.6",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.7.0",
+]
