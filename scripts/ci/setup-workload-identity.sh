@@ -36,6 +36,12 @@ service_account="dbt-ci@${GCP_PROJECT}.iam.gserviceaccount.com"
 provider="projects/${project_number}/locations/global/workloadIdentityPools/github/providers/github"
 member="principalSet://iam.googleapis.com/projects/${project_number}/locations/global/workloadIdentityPools/github/attribute.repository/${repository}"
 
+gcloud services enable \
+  iam.googleapis.com \
+  iamcredentials.googleapis.com \
+  sts.googleapis.com \
+  --project="${GCP_PROJECT}"
+
 if ! gcloud iam workload-identity-pools describe github --project="${GCP_PROJECT}" --location=global >/dev/null 2>&1; then
   gcloud iam workload-identity-pools create github \
     --project="${GCP_PROJECT}" \

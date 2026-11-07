@@ -14,7 +14,7 @@ Na raiz do repositório:
 ./scripts/ci/setup-workload-identity.sh
 ```
 
-O script lê o `GCP_PROJECT` do `.env` e o repositório do remote `origin`. Cria, se ainda não existirem:
+O script lê o `GCP_PROJECT` do `.env` e o repositório do remote `origin`. Ativa as APIs `iam`, `iamcredentials` e `sts`, que a troca do token do GitHub pela conta de serviço usa. Cria, se ainda não existirem:
 
 - o pool `github` e o provedor OIDC `github`, confiando só nesse repositório (`https://token.actions.githubusercontent.com`)
 - a conta `dbt-ci@SEU_PROJETO.iam.gserviceaccount.com`
