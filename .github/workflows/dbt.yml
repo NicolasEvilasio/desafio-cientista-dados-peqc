@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  actions: read
 
 jobs:
   build:
@@ -31,4 +32,53 @@ jobs:
 
       - run: uv run dbt deps --project-dir dbt --profiles-dir dbt
 
-      - run: uv run dbt build --project-dir dbt --profiles-dir dbt --target ci
+      - name: Manifest do master anterior
+        id: state
+        run: |
+          set -euo pipefail
+          mkdir -p dbt/ci-state
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          run_id=$(gh run list \
+            --workflow dbt.yml \
+            --branch master \
+            --event push \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo "Nenhum build anterior de master. Build completo."
+            exit 0
+          fi
+          if ! gh run download "$run_id" --name dbt-manifest --dir dbt/ci-state; then
+            echo "Run $run_id sem manifest. Build completo."
+            exit 0
+          fi
+          if [ -f dbt/ci-state/manifest.json ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: dbt build
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.state.outputs.found }}" = "true" ]; then
+            uv run dbt build \
+              --project-dir dbt \
+              --profiles-dir dbt \
+              --target ci \
+              --select '+state:modified+' \
+              --state ci-state
+          else
+            uv run dbt build --project-dir dbt --profiles-dir dbt --target ci
+          fi
+
+      - name: Guardar manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-manifest
+          path: dbt/target/manifest.json
+          retention-days: 14
+          if-no-files-found: error

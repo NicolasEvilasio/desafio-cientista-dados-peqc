@@ -1,5 +1,6 @@
 # Gerado pelo dbt (compile, run, test, docs)
 target/
+dbt/ci-state/
 dbt_packages/
 dbt_internal_packages/
 logs/

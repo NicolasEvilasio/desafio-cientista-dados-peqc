@@ -42,4 +42,14 @@ O workflow lê esses três nomes. Sem eles, o job quebra no passo de autenticaç
 
 ## 3. Rodar
 
-Um push em `master`, ou um pull request, dispara o workflow. Ele faz `uv sync --frozen`, `dbt deps` e `dbt build --target ci`.
+Um push em `master`, ou um pull request, dispara o workflow. Ele faz `uv sync --frozen`, `dbt deps` e `dbt build`.
+
+O primeiro build bem-sucedido de `master` roda `dbt build --target ci` no projeto inteiro e guarda o `manifest.json` como artifact (`dbt-manifest`, 14 dias).
+
+Nos builds seguintes, o job baixa esse manifest e roda:
+
+```bash
+dbt build --target ci --select +state:modified+ --state ci-state
+```
+
+O `+` dos dois lados pega o que mudou, os pais e os filhos. O resto do grafo não é reconstruído. No target `ci`, os models têm `hours_to_expiration` de 48 horas: os que saíram do build ficam com o timer antigo e o BigQuery apaga quando ele vence. As tabelas externas recebem o mesmo prazo em todo build: o BigQuery recusa `ALTER` nelas, então o `on-run-start` faz `CREATE OR REPLACE` com `expiration_timestamp`. Se o artifact não existir, o job volta ao build completo.

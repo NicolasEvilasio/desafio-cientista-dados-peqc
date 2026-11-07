@@ -24,6 +24,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 on-run-start:
   - "{% do dbt_external_tables.stage_external_sources() %}"
+  - "{% do expire_ci_external_sources() %}"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -37,6 +38,7 @@ models:
     columns: true
 
   queries_educacao:
+    +hours_to_expiration: "{{ 48 if target.name == 'ci' else none }}"
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
