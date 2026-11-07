@@ -13,8 +13,12 @@ logs/
 # Ambiente virtual
 .venv/
 
-# Cache do Python 
+# Cache do Python
 __pycache__/
 
 # Bytecode do Python
 *.py[cod]
+
+# IDE
+.cursor/
+.vscode/
