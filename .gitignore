@@ -1,0 +1,20 @@
+# Gerado pelo dbt (compile, run, test, docs)
+target/
+dbt_packages/
+dbt_internal_packages/
+logs/
+
+# Config local do usuário (criado automaticamente pelo dbt)
+.user.yml
+
+# Segredos
+.env
+
+# Ambiente virtual
+.venv/
+
+# Cache do Python 
+__pycache__/
+
+# Bytecode do Python
+*.py[cod]
