@@ -12,7 +12,7 @@ queries_educacao:
       type: bigquery
 
     ci:
-      dataset: dbt
+      dataset: ci
       job_execution_timeout_seconds: 300
       job_retries: 1
       location: US

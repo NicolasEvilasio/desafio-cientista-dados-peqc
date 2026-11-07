@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: registro_municipal_integrado
     description: "Arquivos do Registro Municipal Integrado em Parquet no GCS, expostos como tabelas externas."
-    schema: brutos_registro_municipal_integrado_staging
+    schema: "{% if target.name == 'ci' %}{{ target.schema }}_{% endif %}brutos_registro_municipal_integrado_staging"
 
     tables:
       - name: aluno
