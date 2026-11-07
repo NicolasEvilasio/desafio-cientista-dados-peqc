@@ -1,0 +1,47 @@
+version: 2
+
+sources:
+  - name: registro_municipal_integrado
+    description: "Arquivos do Registro Municipal Integrado em Parquet no GCS, expostos como tabelas externas."
+    schema: brutos_registro_municipal_integrado_staging
+
+    tables:
+      - name: aluno
+        description: "Dados do aluno"
+
+        external:
+          location: "gs://case_vagas/rmi/aluno"
+          options:
+            format: PARQUET
+
+      - name: avaliacao
+        description: "Dados da avaliação"
+
+        external:
+          location: "gs://case_vagas/rmi/avaliacao"
+          options:
+           format: PARQUET
+
+      - name: escola
+        description: "Dados da escola"
+
+        external:
+          location: "gs://case_vagas/rmi/escola"
+          options:
+           format: PARQUET
+
+      - name: frequencia
+        description: "Dados da frequência"
+
+        external:
+          location: "gs://case_vagas/rmi/frequencia"
+          options:
+           format: PARQUET
+
+      - name: turma
+        description: "Dados da turma"
+
+        external:
+          location: "gs://case_vagas/rmi/turma"
+          options:
+           format: PARQUET
