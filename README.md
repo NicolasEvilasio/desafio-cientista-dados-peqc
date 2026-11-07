@@ -1,206 +1,75 @@
-# Desafio Técnico - Cientista de Dados
+# Registro Municipal Integrado — educação
 
-## Registro Municipal Integrado (RMI)
+Pipeline dbt no BigQuery para os dados educacionais anonimizados do Registro Municipal Integrado (RMI). Os arquivos Parquet ficam no Google Cloud Storage e entram no warehouse como tabelas externas. Os models seguem as camadas staging, intermediate e marts.
 
----
+Os datasets abaixo são criados no projeto GCP definido em `GCP_PROJECT`, no arquivo `.env`.
+
+| Camada | Dataset |
+|---|---|
+| Tabelas externas (Parquet) | `brutos_registro_municipal_integrado_staging` |
+| Staging | `brutos_registro_municipal_integrado` |
+| Intermediate e marts | `educacao_registro_municipal_integrado` |
 
 ## Contexto
 
-O **Registro Municipal Integrado (RMI)** é o data warehouse estratégico da Prefeitura do Rio de Janeiro, que consolida dados de saúde, educação, assistência social e dezenas de outros sistemas municipais. A qualidade, confiabilidade e rastreabilidade desses dados são fundamentais para políticas públicas baseadas em evidências.
-
-Como Cientista de Dados, você liderará a modelagem analítica e a governança de dados que orientam decisões para milhões de cariocas. A **engenharia de analytics** — transformação, teste e documentação de dados — é a espinha dorsal da função.
-
-Este desafio avalia suas habilidades em **modelagem de dados com dbt**, estratégia de testes e qualidade, SQL analítico e documentação técnica, usando dados educacionais anonimizados que simulam o contexto real do RMI.
-
----
-
-## Instruções
-
-1. Faça um fork do repositório do desafio para colocar a sua solução
-2. Organize o projeto seguindo as boas práticas de dbt descritas abaixo
-3. Inclua **README.md** explicando abordagem, decisões de arquitetura e como reproduzir
-4. **Entrega**: Siga as instruções de entrega enviadas por email
-
----
+O RMI é o data warehouse da Prefeitura do Rio de Janeiro. Ele consolida dados de saúde, educação, assistência social e outros sistemas municipais. Este repositório usa um recorte educacional anonimizado dessa base.
 
 ## Dados
 
-Os dados deste desafio representam registros educacionais da rede municipal, **anonimizados e aleatorizados** para fins de avaliação. Eles foram disponibilizados como arquivos Parquet em um bucket do Google Cloud Storage (GCS).
+Os registros são da rede municipal de ensino, anonimizados e aleatorizados. Cada tabela é um objeto Parquet no bucket `case_vagas`, prefixo `rmi`. O nome do objeto não tem sufixo `.parquet`.
 
-### Tabelas Disponíveis
+| Objeto GCS | Descrição | Granularidade |
+|---|---|---|
+| `gs://case_vagas/rmi/aluno` | Cadastro de alunos (IDs anonimizados, faixa etária, bairro anonimizado) | 1 linha por aluno |
+| `gs://case_vagas/rmi/escola` | Cadastro de unidades escolares (IDs anonimizados, tipo, região) | 1 linha por escola |
+| `gs://case_vagas/rmi/turma` | Turmas (série, turno, ano letivo) | 1 linha por turma |
+| `gs://case_vagas/rmi/frequencia` | Frequência escolar | 1 linha por aluno/dia |
+| `gs://case_vagas/rmi/avaliacao` | Notas por bimestre | 1 linha por aluno/disciplina/bimestre |
 
-| Arquivo (GCS) | Descrição | Granularidade |
-|----------------|-----------|---------------|
-| `aluno.parquet` | Cadastro de alunos (IDs anonimizados, faixa etária, bairro anonimizado) | 1 linha por aluno |
-| `escola.parquet` | Cadastro de unidades escolares (IDs anonimizados, tipo, região) | 1 linha por escola |
-| `turma.parquet` | Informações de turmas (série, turno, ano letivo) | 1 linha por turma |
-| `frequencia.parquet` | Registros de frequência escolar | 1 linha por aluno/dia |
-| `avaliacao.parquet` | Notas e avaliações por bimestre | 1 linha por aluno/disciplina/bimestre |
+Console do bucket: https://console.cloud.google.com/storage/browser/case_vagas/rmi
 
-### Tabela Auxiliar Pública
+Tabela pública auxiliar no BigQuery: `datario.dados_mestres.bairro` (cadastro de bairros do Rio de Janeiro).
 
-| Tabela (BigQuery) | Descrição |
-|--------------------|-----------|
-| `datario.dados_mestres.bairro` | Cadastro de bairros do Rio de Janeiro |
+Os identificadores pessoais (nomes, CPFs, endereços) foram removidos e trocados por IDs sintéticos. Os valores numéricos foram aleatorizados, com as distribuições e as chaves de relacionamento preservadas entre as tabelas (`id_aluno`, `id_escola`, `id_turma`). Não dá para reidentificar um registro nem cruzar com fonte externa. Estes dados não descrevem a rede real.
 
-### Acesso aos dados
+As sources estão em `dbt/models/raw_staging/sources.yml`.
 
-Os arquivos Parquet estão disponíveis no bucket GCS:
+## Pré-requisitos
 
-```
-https://console.cloud.google.com/storage/browser/case_vagas/rmi
-```
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Um projeto GCP em que a sua conta possa criar datasets e jobs do BigQuery
 
-Alternativamente, os arquivos podem ser carregados diretamente em um dataset BigQuery pessoal para uso com dbt-bigquery (veja instruções no FAQ).
+O uv instala o Python 3.13 definido em `.python-version`.
 
-**⚠️ IMPORTANTE sobre os dados:**
+## Como executar
 
-- Os dados foram **anonimizados**: todos os identificadores pessoais (nomes, CPFs, endereços) foram removidos e substituídos por IDs sintéticos
-- Os valores numéricos foram **aleatorizados** (com preservação de distribuições e relações entre tabelas)
-- **Não tente reidentificar** registros ou cruzar com fontes externas
-- Os dados servem para avaliar sua capacidade técnica de modelagem, não para gerar insights reais sobre a rede educacional
+Na raiz do repositório, crie o `.env` a partir do exemplo:
 
----
-
-## Parte 1: Projeto dbt e Modelagem
-
-**Construa um projeto dbt do zero** (`dbt-core` + adapter de sua escolha) que transforme os dados brutos em camadas analíticas.
-
-### 1. Configuração e Estrutura do Projeto
-
-Configure o projeto dbt com sources apontando para os dados disponibilizados. Organize os models seguindo a convenção de camadas staging → intermediate → marts.
-
-**Entregue**: Projeto dbt funcional (`dbt run` executa sem erros), com `dbt_project.yml` configurado, sources definidas e estrutura de diretórios organizada.
-
-### 2. Camada de Staging
-
-Crie models de staging para **pelo menos 4 tabelas** fonte. Aplique limpeza, padronização de nomes, tipagem, tratamento de nulos e filtros básicos de qualidade.
-
-**Entregue**: Models de staging com naming convention consistente, lógica de limpeza documentada e `schema.yml` com descrições das sources e colunas.
-
-### 3. Camada Intermediate
-
-Crie **pelo menos 1 model intermediate** que combine dados de múltiplas fontes. Por exemplo: um modelo que una alunos + matrículas + frequência para calcular métricas de presença por aluno/período.
-
-**Entregue**: Model(s) intermediate com lógica de join documentada (premissas, tipo de join, tratamento de registros órfãos) e justificativa das decisões de modelagem.
-
-### 4. Camada de Marts
-
-Construa **pelo menos 1 mart** orientado a responder uma pergunta analítica relevante para gestores públicos. Sugestões (ou proponha a sua):
-
-- **Absenteísmo crônico por região:** Quais escolas/regiões têm maior taxa de alunos com frequência abaixo de 75%?
-- **Desempenho por perfil de turma:** Como a composição das turmas (tamanho, série, turno) se correlaciona com desempenho nas avaliações?
-
-**Entregue**: Mart(s) materializados como table ou incremental, com `schema.yml` contendo descrições, e uma breve análise dos resultados (pode ser no README ou em um notebook auxiliar).
-
----
-
-## Parte 2: Testes e Qualidade de Dados
-
-**Esta é a parte mais importante do desafio.** A confiabilidade dos dados do RMI depende de uma estratégia sólida de testes.
-
-### 5. Testes Genéricos
-
-Aplique testes built-in do dbt (`unique`, `not_null`, `accepted_values`, `relationships`) nos models de staging e marts. A cobertura deve ser intencional — não basta testar tudo mecanicamente, queremos ver critério na escolha do que testar e por quê.
-
-**Entregue**: Testes configurados nos `schema.yml`, todos passando com `dbt test`. Documente brevemente por que cada teste é relevante (pode ser em comentários no YAML ou no README).
-
-### 6. Testes de Regra de Negócio
-
-Crie **pelo menos 2 testes singular ou customizados** que validem regras de negócio educacionais. Exemplos:
-
-- "Nenhum registro de frequência deve ter data anterior à data de matrícula do aluno naquela turma"
-- "Todo aluno com movimentação de tipo 'abandono' deve ter sua última frequência registrada antes da data da movimentação"
-- "A soma de presença + ausência por aluno/dia não deve ultrapassar a carga horária da turma"
-
-**Entregue**: Testes implementados (em `tests/` ou como macros), passando com `dbt test`, com documentação explicando a regra validada e por que ela importa.
-
----
-
-## Parte 3: Documentação e Análise
-
-### 8. Documentação do Projeto
-
-Produza documentação que permita a um novo membro do time entender e dar manutenção ao projeto.
-
-**Entregue**: README.md com instruções de setup e execução, diagrama ou descrição do lineage (staging → intermediate → marts), decisões de arquitetura (materializations, naming conventions, estratégia de testes), trade-offs identificados e o que faria diferente com mais tempo.
-
-### 9. Análise Exploratória (opcional, diferencial)
-
-Elabore um notebook Python complementar com uma análise exploratória dos dados que justifique suas escolhas de modelagem.
-
-**Entregue**: Notebook documentado mostrando padrões encontrados nos dados, anomalias ou problemas de qualidade identificados, e como isso influenciou suas decisões no dbt.
-
----
-
-## Avaliação
-
-Você será avaliado em cada uma das categorias abaixo:
-
-- **Modelagem e arquitetura dbt**
-- **Estratégia de testes e qualidade**
-- **SQL e lógica analítica**
-- **Documentação e comunicação**
-
-Os melhores candidatos serão chamados para a etapa de entrevistas.
-
-**Dica**: profundidade importa mais que completude. Melhor ter menos models com testes excelentes e documentação clara do que muitos models superficiais.
-
-### Diferenciais
-
-- Uso de dbt packages (`dbt_utils`, `dbt_expectations`, `codegen`)
-- Configuração de `freshness` nas sources
-- Uso de tags, hooks ou exposures
-- Testes de data contracts
-- Análise exploratória complementar (Parte 3, questão 9)
-- Configuração de CI com `dbt build` em GitHub Actions
-
----
-
-## Estrutura Sugerida do Repositório
-
-```
-desafio-rmi-ds/
-├── README.md
-├── dbt_project.yml
-├── packages.yml              # (se usar dbt packages)
-├── models/
-│   ├── staging/
-│   │   ├── stg_educacao__aluno.sql
-│   │   ├── stg_educacao__escola.sql
-│   │   ├── ...
-│   │   └── schema.yml
-│   ├── intermediate/
-│   │   ├── int_educacao__aluno_frequencia.sql
-│   │   └── schema.yml
-│   └── marts/
-│       ├── mart_educacao__absenteismo.sql
-│       └── schema.yml
-├── tests/                    # Testes singular
-├── macros/                   # Macros customizadas
-├── seeds/                    # Dados auxiliares (se aplicável)
-├── notebooks/                # (opcional) Análise exploratória
-│   └── eda.ipynb
-├── data/                     # Parquets baixados (não commitar)
-│   └── .gitkeep
-└── requirements.txt
+```bash
+cp .env.example .env
 ```
 
----
+Abra o `.env` e troque o valor pelo id do seu projeto GCP.
 
-## FAQ
+```
+GCP_PROJECT=seu-projeto-gcp
+```
 
-**1. Preciso usar BigQuery como warehouse?**
-Sim, BigQuery é o warehouse do projeto. Os Parquets são carregados via `bq load` para dataset raw do BigQuery Sandbox. O importante é que o projeto dbt funcione end-to-end.
+Rode o setup:
 
-**4. Os dados estão anonimizados — posso confiar nas relações entre tabelas?**
-Sim. As chaves de relacionamento (IDs de aluno, escola, turma) foram preservadas consistentemente entre as tabelas. As distribuições estatísticas foram mantidas, mas os valores individuais foram aleatorizados.
+```bash
+./scripts/dev/setup.sh
+```
 
-**5. Preciso fazer todas as partes?**
-Sim, exceto a Parte 3 questão 9 (análise exploratória), que é opcional. Mas profundidade importa mais que completude — melhor fazer menos com excelência.
+O script lê esse `.env`, cria uma configuração do gcloud com o nome do projeto sem trocar a configuração padrão da máquina, abre o navegador para `gcloud auth login` e `gcloud auth application-default login`, roda `uv sync`, instala o pre-commit e baixa os pacotes do dbt (`dbt deps`).
 
-**6. Posso usar dbt packages?**
-Sim, e é um diferencial! Sugestões: `dbt_utils`, `dbt_expectations`, `codegen`.
+O `gcloud auth application-default login` grava a credencial em `~/.config/gcloud/application_default_credentials.json`. O target `dev` em `dbt/profiles.yml` usa `method: oauth` e lê esse arquivo. O `uv run` lê o `GCP_PROJECT` do `.env` na hora do comando.
 
+Construa os models:
 
-Boa sorte! 🚀
+```bash
+uv run dbt build --project-dir dbt --profiles-dir dbt
+```
+
+O `dbt build` também cria as tabelas externas, se ainda não existirem, pelo hook `on-run-start` do `dbt/dbt_project.yml`.

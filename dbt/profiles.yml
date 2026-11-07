@@ -7,7 +7,7 @@ queries_educacao:
       location: US
       method: oauth
       priority: interactive
-      project: desafio-prefrio
+      project: "{{ env_var('GCP_PROJECT') }}"
       threads: 5
       type: bigquery
 
@@ -19,7 +19,7 @@ queries_educacao:
       location: US
       method: service-account
       priority: interactive
-      project: desafio-prefrio
+      project: "{{ env_var('GCP_PROJECT') }}"
       threads: 5
       type: bigquery
 
