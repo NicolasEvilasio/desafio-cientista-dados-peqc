@@ -11,10 +11,18 @@ repos:
   rev: v2.0.10
   hooks:
     - id: check-model-has-properties-file
+      files: ^dbt/models/
+
     - id: check-model-has-description
+      files: ^dbt/models/
+
     - id: check-model-columns-have-desc
+      files: ^dbt/models/
+
     - id: check-model-has-tests
       args: ["--test-cnt", "1", "--"]
+      files: ^dbt/models/
+
     - id: check-source-has-description
     - id: check-source-table-has-description
     - id: check-source-columns-have-desc

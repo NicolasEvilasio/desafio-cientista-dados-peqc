@@ -1,7 +1,7 @@
 queries_educacao:
   outputs:
     dev:
-      dataset: brutos_rmi
+      dataset: dbt
       job_execution_timeout_seconds: 300
       job_retries: 1
       location: US
@@ -12,7 +12,7 @@ queries_educacao:
       type: bigquery
 
     ci:
-      dataset: brutos_rmi
+      dataset: dbt
       job_execution_timeout_seconds: 300
       job_retries: 1
       keyfile: "{{ env_var('GCP_CREDENTIALS_PATH')}}"

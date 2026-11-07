@@ -22,6 +22,8 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+on-run-start:
+  - "{% do dbt_external_tables.stage_external_sources() %}"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -37,9 +39,18 @@ models:
 
     staging:
       +materialized: table
+      +schema: brutos_registro_municipal_integrado
+      +labels:
+        owner: "nicolas-evilasio"
 
     intermediate:
       +materialized: table
+      +schema: educacao_registro_municipal_integrado
+      +labels:
+        owner: "nicolas-evilasio"
 
     marts:
       +materialized: table
+      +schema: educacao_registro_municipal_integrado
+      +labels:
+        owner: "nicolas-evilasio"
