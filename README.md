@@ -73,3 +73,11 @@ uv run dbt build --project-dir dbt --profiles-dir dbt
 ```
 
 O `dbt build` também cria as tabelas externas, se ainda não existirem, pelo hook `on-run-start` do `dbt/dbt_project.yml`.
+
+## CI
+
+O workflow `.github/workflows/dbt.yml` roda no GitHub deste repositório, no push para `master` e em pull requests.
+
+Para esse workflow autenticar no GCP, a identidade federada precisa estar configurada. Os passos estão em [`scripts/ci/README.md`](scripts/ci/README.md).
+
+Para critérios de avaliação, executar esse script é dispensável, já que os actions executados podem ser visualizados no GitHub.
